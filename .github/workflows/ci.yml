@@ -23,9 +23,9 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install pytest
-      - run: bun test test/test-decision-engine.js
+      - run: bun test ./test/test-decision-engine.js
       - run: bun run make-fixtures
-      - run: bun test test/test-ext.js
+      - run: bun test ./test/test-ext.js
         env: { PORT_OVERRIDE: '3001', LLAMA_SERVER_PATH: '' }
       - run: bun run test:voice:ci
 
