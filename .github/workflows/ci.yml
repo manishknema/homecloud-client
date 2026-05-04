@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pytest
+      - run: bun test test/test-decision-engine.js
+      - run: bun run make-fixtures
+      - run: bun test test/test-ext.js
+        env: { PORT_OVERRIDE: '3001', LLAMA_SERVER_PATH: '' }
+      - run: bun run test:voice:ci
+
+  build:
+    name: Build release packages
+    runs-on: ubuntu-latest
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - name: Cross-compile vigyan-ext
+        run: |
+          mkdir -p dist
+          bun build vigyan-ext.js --compile --target=bun-linux-x64   --outfile dist/vigyan-ext-linux-x64
+          bun build vigyan-ext.js --compile --target=bun-windows-x64 --outfile dist/vigyan-ext-windows-x64.exe
+          bun build vigyan-ext.js --compile --target=bun-darwin-arm64 --outfile dist/vigyan-ext-macos-arm64
+          bun build vigyan-ext.js --compile --target=bun-darwin-x64  --outfile dist/vigyan-ext-macos-x64
+
+      - name: Download llama-server prebuilts
+        working-directory: dist
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/ggerganov/llama.cpp/releases/latest | jq -r .tag_name)
+          curl -fsSL -o llama-linux.zip "https://github.com/ggerganov/llama.cpp/releases/download/${TAG}/llama-${TAG}-bin-ubuntu-x64.zip"
+          unzip -q llama-linux.zip -d llama-linux
+          find llama-linux -name 'llama-server' -exec cp {} ./llama-server-linux-x64 \;
+          curl -fsSL -o llama-win.zip "https://github.com/ggerganov/llama.cpp/releases/download/${TAG}/llama-${TAG}-bin-win-cpu-x64.zip"
+          unzip -q llama-win.zip -d llama-win
+          find llama-win -name 'llama-server.exe' -exec cp {} ./llama-server-windows-x64.exe \; || true
+          rm -rf llama-linux llama-win llama-*.zip || true
+
+      - name: Download Neutralinojs binaries
+        run: |
+          NEU_VER=$(jq -r '.cli.version // "5.3.0"' neutralino.config.json 2>/dev/null || echo "5.3.0")
+          BASE="https://github.com/neutralinojs/neutralinojs/releases/download/v${NEU_VER}"
+          mkdir -p dist/neu
+          curl -fsSL -o dist/neu/neutralino-linux   "${BASE}/neutralino-linux"
+          curl -fsSL -o dist/neu/neutralino-win.exe "${BASE}/neutralino-windows.exe"
+          curl -fsSL -o dist/neu/neutralino-mac-arm "${BASE}/neutralino-mac_arm64"
+          curl -fsSL -o dist/neu/neutralino-mac-x64 "${BASE}/neutralino-mac_x64"
+          chmod +x dist/neu/neutralino-linux dist/neu/neutralino-mac-arm dist/neu/neutralino-mac-x64
+
+      - name: Package all platforms
+        run: |
+          for PLAT in linux-x64 windows-x64 macos-arm64 macos-x64; do
+            mkdir -p release/homecloud-client-${PLAT}
+            cp neutralino.config.json release/homecloud-client-${PLAT}/
+            cp -r resources           release/homecloud-client-${PLAT}/
+          done
+          cp dist/vigyan-ext-linux-x64        release/homecloud-client-linux-x64/vigyan-ext
+          cp dist/llama-server-linux-x64      release/homecloud-client-linux-x64/llama-server 2>/dev/null || true
+          cp dist/neu/neutralino-linux        release/homecloud-client-linux-x64/neutralino
+          chmod +x release/homecloud-client-linux-x64/vigyan-ext release/homecloud-client-linux-x64/neutralino
+          tar -czf release/homecloud-client-linux-x64.tar.gz -C release homecloud-client-linux-x64
+
+          cp dist/vigyan-ext-windows-x64.exe        release/homecloud-client-windows-x64/vigyan-ext.exe
+          cp dist/llama-server-windows-x64.exe       release/homecloud-client-windows-x64/llama-server.exe 2>/dev/null || true
+          cp dist/neu/neutralino-win.exe             release/homecloud-client-windows-x64/neutralino.exe
+          cd release && zip -r homecloud-client-windows-x64.zip homecloud-client-windows-x64 && cd ..
+
+          cp dist/vigyan-ext-macos-arm64    release/homecloud-client-macos-arm64/vigyan-ext
+          cp dist/neu/neutralino-mac-arm    release/homecloud-client-macos-arm64/neutralino
+          chmod +x release/homecloud-client-macos-arm64/vigyan-ext release/homecloud-client-macos-arm64/neutralino
+          tar -czf release/homecloud-client-macos-arm64.tar.gz -C release homecloud-client-macos-arm64
+
+          cp dist/vigyan-ext-macos-x64    release/homecloud-client-macos-x64/vigyan-ext
+          cp dist/neu/neutralino-mac-x64  release/homecloud-client-macos-x64/neutralino
+          chmod +x release/homecloud-client-macos-x64/vigyan-ext release/homecloud-client-macos-x64/neutralino
+          tar -czf release/homecloud-client-macos-x64.tar.gz -C release homecloud-client-macos-x64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/homecloud-client-linux-x64.tar.gz
+            release/homecloud-client-windows-x64.zip
+            release/homecloud-client-macos-arm64.tar.gz
+            release/homecloud-client-macos-x64.tar.gz
+          body: |
+            ## HomeCloud Client ${{ github.ref_name }}
+
+            AI-guided personal file migration to Immich + Nextcloud. Offline, no cloud.
+
+            | Platform | Download |
+            |---|---|
+            | 🪟 Windows x64 | `homecloud-client-windows-x64.zip` |
+            | 🍎 macOS Apple Silicon | `homecloud-client-macos-arm64.tar.gz` |
+            | 🍎 macOS Intel | `homecloud-client-macos-x64.tar.gz` |
+            | 🐧 Linux x64 | `homecloud-client-linux-x64.tar.gz` |
+
+            **Phi-4-mini model (~2.4 GB):** downloads automatically on first launch, or copy manually next to the binary.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
