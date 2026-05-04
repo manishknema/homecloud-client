@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VigyanBytes Home Cloud Backup Client</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Surface */
+  --bg:#f8f9fa;
+  --surface:#ffffff;
+  --surface-variant:#f1f3f4;
+  --surface-container:#e8eaed;
+  /* Borders */
+  --border:#dadce0;
+  --border-focus:#1a73e8;
+  /* Text */
+  --text:#202124;
+  --text-secondary:#5f6368;
+  --text-muted:#80868b;
+  /* Brand */
+  --blue:#1a73e8;
+  --blue-hover:#1765cc;
+  --blue-surface:#e8f0fe;
+  --blue-surface-deep:#d2e3fc;
+  /* Status */
+  --ok:#34a853;
+  --ok-surface:#e6f4ea;
+  --warn:#f9ab00;
+  --warn-surface:#fef7e0;
+  --err:#ea4335;
+  --err-surface:#fce8e6;
+  /* Radius */
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+  --r-xl:24px;
+  /* Elevation */
+  --shadow-1:0 1px 2px rgba(60,64,67,.15),0 1px 3px 1px rgba(60,64,67,.1);
+  --shadow-2:0 1px 3px rgba(60,64,67,.2),0 4px 8px 3px rgba(60,64,67,.1);
+  --shadow-3:0 4px 8px rgba(60,64,67,.2),0 8px 24px 6px rgba(60,64,67,.1);
+  /* Font — system-native, fully airgapped, zero downloads */
+  --font:-apple-system,'Segoe UI Variable','Segoe UI',system-ui,Roboto,'Helvetica Neue',Arial,sans-serif;
+  --font-mono:ui-monospace,'Cascadia Code','Segoe UI Mono','SF Mono','Roboto Mono',monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+/* ── Header ── */
+header{
+  background:var(--surface);
+  padding:0 24px;
+  height:56px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;
+  box-shadow:var(--shadow-1);
+  position:sticky;top:0;z-index:10;
+}
+.header-logo{display:flex;align-items:center;gap:10px}
+.header-logo-img{height:34px;width:auto;object-fit:contain;display:block}
+.header-app-name{
+  font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--text-secondary);padding:3px 10px;border-radius:var(--r-xl);
+  background:var(--surface-variant);border:1px solid var(--border);
+}
+/* ai-badge appended to logo area by JS */
+.ai-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;vertical-align:middle}
+.ai-badge.phi{background:var(--blue-surface);color:var(--blue)}
+.ai-badge.rules{background:var(--surface-variant);color:var(--text-secondary)}
+
+/* ── Stepper ── */
+.steps{display:flex;align-items:center;gap:0;margin-left:auto}
+.step{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:var(--r-xl);
+  font-size:12px;font-weight:500;color:var(--text-muted);
+  cursor:default;letter-spacing:.01em;transition:background .15s;
+}
+.step.active{color:var(--blue);background:var(--blue-surface)}
+.step.done{color:var(--ok)}
+.step-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+.step.active .step-dot,.step.done .step-dot{opacity:1}
+.step-sep{width:16px;height:1px;background:var(--border);flex-shrink:0}
+
+/* ── Main ── */
+main{flex:1;overflow:auto;padding:28px 24px;max-width:760px;width:100%;margin:0 auto}
+
+/* ── Cards ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:20px 24px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow-1);
+  transition:box-shadow .2s;
+}
+.card:hover{box-shadow:var(--shadow-2)}
+.card-title{
+  font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:16px;
+}
+.card-icon{font-size:20px;margin-bottom:12px}
+
+/* ── Form elements ── */
+label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px}
+input,select{
+  width:100%;background:var(--surface);
+  border:1.5px solid var(--border);
+  color:var(--text);padding:10px 13px;
+  border-radius:var(--r-sm);font:inherit;font-size:14px;
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15)}
+input::placeholder{color:var(--text-muted)}
+
+/* ── Buttons ── */
+.btn{
+  padding:10px 20px;border-radius:var(--r-xl);border:none;
+  cursor:pointer;font:500 14px var(--font);
+  transition:background .15s,box-shadow .15s,opacity .15s;
+  white-space:nowrap;
+}
+.btn:disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-hover);box-shadow:var(--shadow-1)}
+.btn-ghost{background:transparent;color:var(--blue);border:1.5px solid var(--border)}
+.btn-ghost:hover:not(:disabled){background:var(--blue-surface);border-color:var(--blue)}
+.btn-tonal{background:var(--blue-surface);color:var(--blue)}
+.btn-tonal:hover{background:var(--blue-surface-deep)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-danger{background:var(--err);color:#fff}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:var(--r-xl)}
+
+/* ── Tags / chips ── */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r-xl);font-size:12px;font-weight:500;margin:2px;gap:4px}
+.tag-img{background:var(--blue-surface);color:var(--blue)}
+.tag-vid{background:#e6f4ea;color:#137333}
+.tag-aud{background:#fce8e6;color:#c5221f}
+.tag-doc{background:#fef7e0;color:#b06000}
+.tag-code{background:#f3e8fd;color:#6200ea}
+.tag-arc{background:#fce8f9;color:#a50080}
+.tag-other{background:var(--surface-variant);color:var(--text-secondary)}
+
+/* ── Source rows ── */
+.source-row{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border-radius:var(--r-md);
+  border:1.5px solid var(--border);margin-bottom:8px;
+  background:var(--surface);transition:border-color .15s;
+}
+.source-row:hover{border-color:var(--blue)}
+.source-row .name{flex:1;font-size:13px;font-weight:500}
+.source-row .size{font-size:12px;color:var(--text-muted);white-space:nowrap}
+
+/* ── Progress ── */
+.progress-bar{height:4px;background:var(--surface-container);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s ease}
+
+/* ── Log box ── */
+.log-box{
+  background:var(--surface-variant);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:14px;
+  font:13px/1.8 var(--font-mono);
+  height:200px;overflow-y:auto;
+}
+.ok-text{color:var(--ok)}.warn-text{color:var(--warn)}.err-text{color:var(--err)}.muted{color:var(--text-muted)}
+
+/* ── AI bubble ── */
+.phi-bubble{
+  background:var(--blue-surface);
+  border:1px solid var(--border-focus);
+  border-radius:var(--r-lg);
+  padding:14px 18px;margin:12px 0;
+  font-size:13px;line-height:1.75;color:var(--text);
+}
+.phi-bubble .phi-label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:5px;
+}
+.phi-bubble .phi-label::before{content:'✦';font-size:9px}
+.phi-bubble.rules{background:var(--surface-variant);border-color:var(--border);color:var(--text-secondary)}
+.phi-bubble.rules .phi-label{color:var(--text-muted)}
+
+/* ── Voice button ── */
+.voice-btn{
+  width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  transition:all .2s;background:var(--surface-variant);
+}
+.voice-btn:hover{background:var(--surface-container)}
+.voice-btn.listening{background:var(--err);animation:pulse 1.2s ease infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.8}}
+
+/* ── Screen visibility ── */
+.screen{display:none}
+.screen.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Setup screen ── */
+.gpu-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 14px;border-radius:var(--r-xl);
+  font-size:13px;font-weight:500;
+}
+.gpu-badge.ok{background:var(--ok-surface);color:#137333}
+.gpu-badge.warn{background:var(--warn-surface);color:#b06000}
+.gpu-badge.err{background:var(--err-surface);color:#c5221f}
+.gpu-badge .badge-dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+
+.mode-toggle{display:flex;gap:8px;margin-top:12px}
+.mode-opt{
+  flex:1;padding:14px 16px;cursor:pointer;border-radius:var(--r-md);
+  text-align:left;font:inherit;border:1.5px solid var(--border);
+  background:var(--surface);color:var(--text-secondary);
+  transition:all .15s;
+}
+.mode-opt:hover{border-color:var(--blue);background:var(--blue-surface)}
+.mode-opt.selected{border-color:var(--blue);background:var(--blue-surface);color:var(--blue)}
+.mode-opt-title{font-size:13px;font-weight:600;margin-bottom:3px;color:inherit}
+.mode-opt.selected .mode-opt-title{color:var(--blue)}
+.mode-opt-desc{font-size:11px;color:var(--text-muted)}
+
+.path-row{display:flex;gap:8px;margin-top:8px}
+.path-row input{flex:1}
+.build-links{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.build-link{
+  font-size:12px;font-weight:500;color:var(--blue);cursor:pointer;
+  background:none;border:none;text-align:left;padding:0;
+  text-decoration:none;display:flex;align-items:center;gap:4px;
+}
+.build-link:hover{text-decoration:underline}
+.build-link::before{content:'↓';font-size:13px}
+
+.setup-step{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid var(--border)}
+.setup-step:last-child{border-bottom:none;padding-bottom:0}
+.setup-num{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;
+  background:var(--surface-container);color:var(--text-muted);
+  transition:all .25s;
+}
+.setup-num.done{background:var(--ok);color:#fff}
+.setup-num.active{background:var(--blue);color:#fff}
+.setup-label{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.setup-sub{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:10px}
+
+/* ── Drive / folder picker ── */
+.drive-list,.folder-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.drive-card{
+  border:1.5px solid var(--border);border-radius:var(--r-md);
+  padding:14px 16px;cursor:pointer;transition:all .15s;
+  background:var(--surface);
+}
+.drive-card:hover{border-color:var(--blue);box-shadow:var(--shadow-1)}
+.drive-card.selected{border-color:var(--blue);background:var(--blue-surface)}
+.drive-icon{font-size:22px;margin-bottom:6px}
+.drive-name{font-size:13px;font-weight:500}
+.drive-free{font-size:12px;color:var(--text-muted);margin-top:3px}
+
+.folder-item{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;
+  border-radius:var(--r-sm);cursor:pointer;border:1.5px solid transparent;
+  transition:all .12s;
+}
+.folder-item:hover{background:var(--surface-variant);border-color:var(--border)}
+.folder-item.has-archives{border-color:var(--warn);background:var(--warn-surface)}
+.breadcrumb{
+  font-size:12px;color:var(--text-muted);margin-bottom:10px;
+  word-break:break-all;display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+}
+
+/* ── Type picker ── */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.type-card{
+  border:1.5px solid var(--border);border-radius:var(--r-md);
+  padding:14px;cursor:pointer;transition:all .15s;background:var(--surface);
+}
+.type-card:hover{border-color:var(--blue);box-shadow:var(--shadow-1)}
+.type-card.selected{border-color:var(--blue);background:var(--blue-surface)}
+.type-icon{font-size:24px;margin-bottom:6px}
+.type-name{font-size:13px;font-weight:500}
+.type-dest{font-size:11px;color:var(--text-muted);margin-top:3px}
+
+/* ── People chips ── */
+.people-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.person-chip{
+  background:var(--surface-variant);border:1.5px solid var(--border);
+  border-radius:var(--r-xl);padding:5px 14px;font-size:13px;font-weight:500;
+  transition:all .15s;
+}
+.person-chip.named{border-color:var(--ok);background:var(--ok-surface);color:#137333}
+
+/* ── Divider ── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* ── Status badges inline ── */
+.status-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:var(--r-xl);font-size:12px;font-weight:500;
+}
+.status-badge.ok{background:var(--ok-surface);color:#137333}
+.status-badge.warn{background:var(--warn-surface);color:#b06000}
+.status-badge.err{background:var(--err-surface);color:#c5221f}
+.status-badge.info{background:var(--blue-surface);color:var(--blue)}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-logo">
+    <img src="logo.webp" alt="VigyanBytes" class="header-logo-img">
+    <span class="header-app-name">Home Cloud Backup Client</span>
+  </div>
+  <div class="steps" id="steps-bar" style="display:none">
+    <div class="step active" id="stp-1"><span class="step-dot"></span>Connect</div>
+    <div class="step-sep"></div>
+    <div class="step" id="stp-2"><span class="step-dot"></span>Sources</div>
+    <div class="step-sep"></div>
+    <div class="step" id="stp-3"><span class="step-dot"></span>Review</div>
+    <div class="step-sep"></div>
+    <div class="step" id="stp-4"><span class="step-dot"></span>Transfer</div>
+    <div class="step-sep"></div>
+    <div class="step" id="stp-5"><span class="step-dot"></span>Done</div>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════ SCREEN 0: SETUP ════════════════════════ -->
+<div class="screen active" id="screen-0">
+  <div style="text-align:center;padding:8px 0 20px">
+    <div style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.5px">Welcome</div>
+    <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">One-time setup · takes about 30 seconds</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Setup</div>
+
+    <div class="setup-step">
+      <div class="setup-num active" id="setup-num-1">1</div>
+      <div style="flex:1">
+        <div class="setup-label">Detecting hardware…</div>
+        <div id="gpu-badge-wrap" style="margin-top:6px"></div>
+        <div id="gpu-cpu-warn" style="display:none;margin-top:10px" class="phi-bubble">
+          <div class="phi-label">Performance note</div>
+          <span id="gpu-cpu-warn-text"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-step" id="setup-step-2">
+      <div class="setup-num" id="setup-num-2">2</div>
+      <div style="flex:1">
+        <div class="setup-label">AI assistant mode</div>
+        <div class="setup-sub">
+          The rule engine handles ~80% of file types instantly with no AI.
+          Phi-4-mini is only called for mixed or ambiguous content.
+        </div>
+        <div class="mode-toggle">
+          <button class="mode-opt selected" id="mode-phi" onclick="setMode('phi')">
+            <div class="mode-opt-title">Enable AI assistant</div>
+            <div class="mode-opt-desc">Phi-4-mini · richer decisions for mixed content</div>
+          </button>
+          <button class="mode-opt" id="mode-rules" onclick="setMode('rules-only')">
+            <div class="mode-opt-title">Rule-based only</div>
+            <div class="mode-opt-desc">Instant · covers 80% of cases</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-step" id="setup-step-3" style="display:none">
+      <div class="setup-num" id="setup-num-3">3</div>
+      <div style="flex:1">
+        <div class="setup-label">llama-server path</div>
+        <div class="setup-sub" id="llama-recommended-text"></div>
+        <div class="path-row">
+          <input id="llama-path" placeholder="Path to llama-server executable" spellcheck="false">
+          <button class="btn btn-ghost" onclick="browseLlama()" style="white-space:nowrap">Browse…</button>
+          <button class="btn btn-ghost" onclick="testLlama()" style="white-space:nowrap">Test</button>
+        </div>
+        <div id="llama-test-result" style="margin-top:6px;font-size:11px"></div>
+        <div class="build-links" id="download-links" style="display:none">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Don't have it? Download the right build:</div>
+          <button class="build-link" id="dl-link-primary" onclick="openDownload('primary')"></button>
+          <button class="build-link" id="dl-link-release" onclick="openDownload('release')">All releases → github.com/ggerganov/llama.cpp/releases</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-step" id="setup-step-4">
+      <div class="setup-num" id="setup-num-4">4</div>
+      <div style="flex:1">
+        <div class="setup-label">Phi-4-mini model</div>
+        <div class="setup-sub" id="model-status-text">
+          Model (~2.1 GB) downloads automatically on first use from HuggingFace.
+          Nothing to do here.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+    <button class="btn btn-ghost" onclick="skipSetup()">Skip — use rules only</button>
+    <button class="btn btn-primary" id="btn-setup-continue" disabled onclick="finishSetup()">Continue</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 1: CONNECT ═══════════════════════ -->
+<div class="screen" id="screen-1">
+  <div class="card">
+    <div class="card-icon">🏠</div>
+    <div class="card-title">Connect to your VVC server</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div>
+        <label>Server address <span style="color:var(--text-muted);font-weight:400">(Tailscale preferred)</span></label>
+        <input id="vvc-host" value="100.88.18.114" placeholder="100.x.x.x or hostname">
+      </div>
+      <div>
+        <label>SSH user</label>
+        <input id="vvc-user" value="manish" placeholder="manish">
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label>Your username on VVC</label>
+      <input id="my-user" value="manish" placeholder="manish">
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-primary" id="btn-connect">Test connection</button>
+      <div id="connect-status" style="font-size:13px"></div>
+    </div>
+  </div>
+  <div class="phi-bubble" id="phi-connect">
+    <div class="phi-label">AI ASSISTANT</div>
+    Enter your VVC server address and tap "Test connection". I'll verify the connection before we start.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 2: SOURCES ══════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="card">
+    <div class="card-icon">💽</div><div class="card-title">Select your drives</div>
+    <div id="drives-loading" style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:13px"><span class="spinner"></span> Detecting drives…</div>
+    <div id="drives-list" class="drive-list"></div>
+  </div>
+
+  <!-- folder browser (shown after drive selected) -->
+  <div class="card" id="browser-card" style="display:none">
+    <div class="card-title">Browse folders</div>
+    <div class="breadcrumb" id="breadcrumb">/</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" id="btn-up">↑ Up</button>
+      <button class="btn btn-tonal btn-sm" id="btn-add-folder">+ Add this folder</button>
+    </div>
+    <div id="folder-list"></div>
+  </div>
+
+  <!-- peek result / type picker -->
+  <div class="card" id="type-card" style="display:none">
+    <div class="card-title">What type of content is this?</div>
+    <div class="phi-bubble" id="phi-type-hint" style="margin:0 0 10px"></div>
+    <div class="type-grid" id="type-grid"></div>
+    <div style="margin-top:10px;display:flex;gap:6px">
+      <button class="btn btn-primary" id="btn-confirm-type">Add to plan</button>
+      <button class="btn btn-ghost" id="btn-cancel-type">Cancel</button>
+    </div>
+  </div>
+
+  <!-- added sources -->
+  <div class="card" id="sources-card" style="display:none">
+    <div class="card-title">Sources plan</div>
+    <div id="sources-list"></div>
+    <button class="btn btn-primary" id="btn-to-review" style="margin-top:10px">Review plan →</button>
+  </div>
+
+  <div class="phi-bubble" id="phi-sources">
+    <div class="phi-label">AI ASSISTANT</div>
+    Select a drive to browse. I'll peek inside archives automatically and suggest the right destination.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 3: REVIEW ═══════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="card">
+    <div class="card-title">Migration plan</div>
+    <div id="review-list"></div>
+  </div>
+  <div class="phi-bubble" id="phi-review">
+    <div class="phi-label">AI ASSISTANT</div>
+    <span id="phi-review-text">Review your plan. Remove anything you don't want, then start the transfer.</span>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn btn-ghost" id="btn-back-sources">← Edit sources</button>
+    <button class="btn btn-primary" id="btn-start-transfer">Start transfer →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 4: TRANSFER ═════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="card">
+    <div class="card-title">Transferring to VVC</div>
+    <div id="transfer-list"></div>
+  </div>
+  <div class="log-box" id="transfer-log"></div>
+  <div class="phi-bubble" id="phi-transfer">
+    <div class="phi-label">AI ASSISTANT</div>
+    <span id="phi-transfer-text">Transfer started. You can close the lid — I'll notify you on Telegram when done.</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCREEN 5: DONE ════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="card">
+    <div class="card-title">Transfer complete</div>
+    <div id="done-stats" style="font-size:13px;line-height:2"></div>
+  </div>
+
+  <div class="card" id="ml-card">
+    <div class="card-title">Immich · Face detection</div>
+    <div id="ml-status" class="muted" style="font-size:12px">Checking ML status…</div>
+    <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" id="ml-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="card" id="tagging-card" style="display:none">
+    <div class="card-title">Tag your people <span style="font-size:10px;font-weight:500;color:var(--err);background:var(--err-surface);padding:2px 8px;border-radius:10px;margin-left:6px">essential</span></div>
+    <p style="font-size:12px;margin-bottom:10px;color:var(--text)">
+      Immich found face clusters across your library.<br>
+      Name each cluster once — Immich recognises them in all future photos automatically.
+    </p>
+    <div class="people-grid" id="people-grid"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="btn-open-immich-ts">Open Immich (Tailscale)</button>
+      <button class="btn btn-ghost"   id="btn-open-immich-lan">Open Immich (LAN)</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">
+      Takes 30–60 min once. After naming 5–6 people, smart search and On This Day work for your whole library.
+    </p>
+    <button class="btn btn-ok" id="btn-tagged-done" style="margin-top:10px">I've finished tagging ✓</button>
+  </div>
+
+  <div class="card" id="optional-card" style="display:none">
+    <div class="card-title">Next steps</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="btn-dedup-fast">▶ Fast dedup – GPU</button>
+      <button class="btn btn-ghost"   id="btn-dedup-slow">▶ Slow dedup – CPU</button>
+      <button class="btn btn-ghost"   id="btn-enhance">✨ Enhance old photos</button>
+      <button class="btn btn-ghost"   id="btn-migrate-nc" style="display:none">📁 Migrate Drive→NC</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">
+      Actions are confirmed via Telegram before running on your VVC server.
+    </p>
+  </div>
+
+  <div class="phi-bubble" id="phi-done">
+    <div class="phi-label">AI ASSISTANT</div>
+    <span id="phi-done-text">Transfer done. Waiting for Immich face detection to complete…</span>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <button class="voice-btn idle" id="voice-btn" title="Voice command">🎤</button>
+  <div id="voice-status" style="font-size:11px;color:var(--muted);flex:1"></div>
+  <div id="phi-thinking" style="font-size:11px;color:var(--accent);display:none">AI thinking…</div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════════════
+const API   = 'http://localhost:3000';
+const state = {
+  screen: 0,
+  vvcHost: '100.88.18.114',
+  vvcUser: 'manish',
+  myUser:  'manish',
+  currentDrive: null,
+  currentPath:  null,
+  pendingSource: null,   // folder/archive being configured
+  sources: [],           // confirmed sources
+  jobs: {},              // jobId → {source, status, pct}
+  transferDone: false,
+  immichBase: null,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = bytes => {
+  if (!bytes) return '—';
+  const gb = bytes/1e9;
+  return gb >= 1 ? gb.toFixed(1)+' GB' : (bytes/1e6).toFixed(0)+' MB';
+};
+
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(`screen-${n}`).classList.add('active');
+  state.screen = n;
+  // steps bar only visible for screens 1-5
+  const bar = $('steps-bar');
+  if (bar) bar.style.display = n >= 1 ? 'flex' : 'none';
+  const steps = document.querySelectorAll('.step');
+  steps.forEach((s,i) => {
+    s.classList.remove('active','done');
+    if (i+1 < n) s.classList.add('done');
+    if (i+1 === n) s.classList.add('active');
+  });
+}
+
+function phiSay(screenId, text) {
+  const el = $(`phi-${screenId}`);
+  if (!el) return;
+  const content = el.querySelector('span') || el;
+  if (content.tagName === 'SPAN') content.textContent = text;
+  else {
+    const inner = el.innerHTML;
+    el.innerHTML = `<div class="phi-label">AI ASSISTANT</div>${esc(text)}`;
+  }
+}
+
+function logLine(text) {
+  const box = $('transfer-log');
+  if (!box) return;
+  const at = box.scrollTop + box.clientHeight >= box.scrollHeight - 10;
+  const cls = text.includes('✅')||text.includes('OK') ? 'ok-text'
+            : text.includes('❌')||text.includes('ERR') ? 'err-text'
+            : text.includes('⚠') ? 'warn-text' : '';
+  box.innerHTML += `<div class="${cls}">${esc(text)}</div>`;
+  if (at) box.scrollTop = box.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 0: Setup
+// ═══════════════════════════════════════════════════════════════════════════
+
+const LLAMA_BUILDS = {
+  cuda:   { label: 'CUDA build (NVIDIA)',       file: 'win-cuda-cu12.2.0-x64' },
+  sycl:   { label: 'SYCL/oneAPI build (Intel)', file: 'win-sycl-x64' },
+  vulkan: { label: 'Vulkan build (AMD/generic)', file: 'win-vulkan-x64' },
+  metal:  { label: 'Metal build (macOS)',        file: 'macos-arm64' },
+  cpu:    { label: 'CPU build',                  file: 'win-cpu-x64' },
+};
+
+const setup = {
+  gpu: null,          // detectGPU result
+  mode: 'phi',        // 'phi' | 'rules-only'
+  llamaPath: '',
+  llamaVerified: false,
+  downloadUrls: {},
+};
+
+async function initSetup() {
+  // check if already configured
+  try {
+    const cfg = await api('GET', '/api/setup/config');
+    if (cfg.configured) {
+      // already set up — go straight to screen 1
+      $('steps-bar').style.display = 'flex';
+      showScreen(1);
+      initScreen1();
+      return;
+    }
+    if (cfg.llamaServerPath) $('llama-path').value = cfg.llamaServerPath;
+    if (cfg.aiMode) { setup.mode = cfg.aiMode; setMode(cfg.aiMode, false); }
+  } catch {}
+
+  // detect GPU
+  try {
+    const g = await api('GET', '/api/setup/detect-gpu');
+    setup.gpu = g;
+    renderGpuBadge(g);
+    renderLlamaSection(g);
+    renderDownloadLinks(g);
+    // auto-fill common path hint
+    if (!$('llama-path').value) $('llama-path').value = g.defaultPath || '';
+  } catch (e) {
+    $('gpu-badge-wrap').innerHTML = `<span class="gpu-badge err">Detection failed — ${esc(e.message)}</span>`;
+  }
+  checkSetupReady();
+}
+
+function renderGpuBadge(g) {
+  const cls = g.backend === 'cpu' ? 'warn' : 'ok';
+  const icon = g.backend === 'cuda' ? '⚡' : g.backend === 'metal' ? '' : g.backend === 'sycl' ? '◈' : g.backend === 'vulkan' ? '◆' : '◻';
+  $('gpu-badge-wrap').innerHTML = `<span class="gpu-badge ${cls}"><span class="badge-dot"></span>${icon} ${esc(g.label)}</span>`;
+  $('setup-num-1').textContent = '✓';
+  $('setup-num-1').classList.remove('active');
+  $('setup-num-1').classList.add('done');
+
+  if (g.backend === 'cpu') {
+    $('gpu-cpu-warn').style.display = '';
+    $('gpu-cpu-warn-text').textContent =
+      `No GPU detected — AI responses will take 30–90 seconds on CPU. `+
+      `This only affects mixed/ambiguous file types; pure photo albums, music, or code folders are always instant. `+
+      `You can still enable AI or skip it and use rule-based mode (covers 80% of cases).`;
+  }
+}
+
+function renderLlamaSection(g) {
+  const build = LLAMA_BUILDS[g.backend] || LLAMA_BUILDS.cpu;
+  $('llama-recommended-text').textContent =
+    `Recommended: ${build.label}. Point to your existing llama-server executable or download below.`;
+  $('setup-step-3').style.display = '';
+  $('setup-num-2').classList.remove('active'); $('setup-num-2').classList.add('done');
+  $('setup-num-3').classList.add('active');
+}
+
+function renderDownloadLinks(g) {
+  const build = LLAMA_BUILDS[g.backend] || LLAMA_BUILDS.cpu;
+  const tag   = g.latestTag || 'latest';
+  const base  = 'https://github.com/ggerganov/llama.cpp/releases';
+  setup.downloadUrls.primary = `${base}/download/${tag}/llama-${tag}-bin-${build.file}.zip`;
+  setup.downloadUrls.release = `${base}`;
+  $('dl-link-primary').textContent = `Download ${build.label} (${tag})`;
+  $('download-links').style.display = '';
+}
+
+function setMode(mode, updateDom = true) {
+  setup.mode = mode;
+  if (updateDom) {
+    $('mode-phi').classList.toggle('selected', mode === 'phi');
+    $('mode-rules').classList.toggle('selected', mode === 'rules-only');
+  }
+  // show/hide llama-server step depending on mode
+  const needLlama = mode === 'phi';
+  if ($('setup-step-3')) $('setup-step-3').style.display = needLlama ? '' : 'none';
+  if ($('setup-step-4')) $('setup-step-4').style.display = needLlama ? '' : 'none';
+  if (mode === 'rules-only') {
+    setup.llamaVerified = false;
+    $('btn-setup-continue').disabled = false;  // can proceed without llama
+  }
+  checkSetupReady();
+}
+
+async function browseLlama() {
+  // Neutralinojs file picker if available, otherwise user types path
+  if (window.Neutralino && Neutralino.os) {
+    try {
+      const entries = await Neutralino.os.showOpenDialog('Select llama-server executable', {
+        filters: [{ name: 'Executable', extensions: ['exe',''] }],
+      });
+      if (entries && entries[0]) {
+        $('llama-path').value = entries[0];
+        await testLlama();
+      }
+    } catch {}
+  } else {
+    $('llama-path').focus();
+  }
+}
+
+async function testLlama() {
+  const path = $('llama-path').value.trim();
+  if (!path) return;
+  const el = $('llama-test-result');
+  el.className = 'muted'; el.textContent = 'Testing…';
+  try {
+    const r = await api('POST', '/api/setup/test-llama-server', { path });
+    if (r.ok) {
+      el.className = 'ok-text';
+      el.textContent = `✓ ${r.version}`;
+      setup.llamaPath    = path;
+      setup.llamaVerified = true;
+      $('setup-num-3').textContent = '✓';
+      $('setup-num-3').classList.remove('active'); $('setup-num-3').classList.add('done');
+      $('setup-num-4').classList.add('active');
+    } else {
+      el.className = 'err-text';
+      el.textContent = `✗ ${r.error || 'not a valid llama-server binary'}`;
+      setup.llamaVerified = false;
+    }
+  } catch (e) {
+    el.className = 'err-text';
+    el.textContent = `✗ ${e.message}`;
+    setup.llamaVerified = false;
+  }
+  checkSetupReady();
+}
+
+function openDownload(which) {
+  const url = setup.downloadUrls[which];
+  if (!url) return;
+  if (window.Neutralino && Neutralino.os) {
+    Neutralino.os.open(url);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function checkSetupReady() {
+  const ok = setup.mode === 'rules-only' || (setup.mode === 'phi' && setup.llamaVerified);
+  $('btn-setup-continue').disabled = !ok;
+}
+
+async function finishSetup() {
+  try {
+    await api('POST', '/api/setup/save-config', {
+      aiMode:          setup.mode,
+      llamaServerPath: setup.llamaVerified ? setup.llamaPath : null,
+    });
+  } catch {}
+  $('steps-bar').style.display = 'flex';
+  showScreen(1);
+  initScreen1();
+}
+
+function skipSetup() {
+  setup.mode = 'rules-only';
+  finishSetup();
+}
+
+// auto-start setup on load
+initSetup();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 1: Connect
+// ═══════════════════════════════════════════════════════════════════════════
+function initScreen1() {
+  // add ai-mode badge next to app name in header
+  const logoArea = document.querySelector('.header-logo');
+  if (logoArea && !logoArea.querySelector('.ai-badge')) {
+    const span = document.createElement('span');
+    span.className = setup.mode === 'rules-only' ? 'ai-badge rules' : 'ai-badge phi';
+    span.textContent = setup.mode === 'rules-only' ? 'rules only' : 'AI on';
+    logoArea.appendChild(span);
+  }
+}
+
+$('btn-connect').onclick = async () => {
+  const host = $('vvc-host').value.trim();
+  const user = $('vvc-user').value.trim();
+  const me   = $('my-user').value.trim();
+  if (!host || !user) return;
+
+  $('btn-connect').disabled = true;
+  $('connect-status').innerHTML = `<span class="spinner"></span> <span class="muted" style="margin-left:8px">Connecting…</span>`;
+
+  try {
+    const status = await api('GET', '/api/status');
+    state.vvcHost = host;
+    state.vvcUser = user;
+    state.myUser  = me;
+    state.immichBase = `http://${host}:2283`;
+
+    $('connect-status').innerHTML =
+      `<span class="status-badge ok">Connected · ${esc(status.gpu)}</span>`;
+
+    // session heartbeat
+    await api('POST', '/api/session', {user: me, action: 'connect'});
+    setInterval(() => api('POST', '/api/session', {user: me, action: 'heartbeat'}).catch(()=>{}), 30000);
+
+    phiSay('connect', `Connected to VVC. GPU: ${status.gpu}. Let's pick your sources.`);
+    setTimeout(() => { showScreen(2); loadDrives(); }, 700);
+  } catch(e) {
+    $('connect-status').innerHTML = `<span class="status-badge err">${esc(e.message)}</span>`;
+    $('btn-connect').disabled = false;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 2: Sources — drives
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadDrives() {
+  $('drives-loading').style.display = 'block';
+  try {
+    const drives = await api('GET', '/api/drives');
+    $('drives-loading').style.display = 'none';
+    $('drives-list').innerHTML = drives.map(d => `
+      <div class="drive-card" data-path="${esc(d.path)}" data-label="${esc(d.label)}">
+        <div class="drive-icon">💾</div>
+        <div class="drive-name">${esc(d.label)}</div>
+        <div class="drive-free">${fmt(d.freeBytes)} free · ${fmt(d.totalBytes)} total</div>
+      </div>`).join('');
+
+    document.querySelectorAll('.drive-card').forEach(card => {
+      card.onclick = () => {
+        document.querySelectorAll('.drive-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        openDir(card.dataset.path);
+      };
+    });
+  } catch(e) {
+    $('drives-loading').textContent = 'Could not enumerate drives: ' + e.message;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 2: Sources — folder browser
+// ═══════════════════════════════════════════════════════════════════════════
+async function openDir(path) {
+  state.currentPath = path;
+  $('browser-card').style.display = 'block';
+  $('breadcrumb').textContent = path;
+  $('folder-list').innerHTML = '<div class="muted" style="font-size:12px">Loading…</div>';
+  $('type-card').style.display = 'none';
+
+  try {
+    const { entries, archives } = await api('GET', `/api/listdir?path=${encodeURIComponent(path)}`);
+
+    if (archives.length > 0) {
+      phiSay('sources', `Found ${archives.length} archive${archives.length>1?'s':''} in this folder. `+
+        `I'll peek inside each one. Click an archive to inspect it.`);
+    }
+
+    $('folder-list').innerHTML = entries.slice(0,100).map(e => {
+      const isArc  = e.isArchive;
+      const isDir  = e.isDir;
+      const arcWarn = isArc ? ' has-archives' : '';
+      const icon   = isDir ? '📁' : isArc ? '📦' : bucketIcon(e.bucket);
+      return `<div class="folder-item${arcWarn}" data-path="${esc(e.path)}" data-dir="${isDir}" data-arc="${isArc}" data-size="${e.sizeBytes||0}">
+        ${icon} <span style="flex:1;font-size:12px">${esc(e.name)}</span>
+        <span style="font-size:11px;color:var(--muted)">${isDir?'':fmt(e.sizeBytes)}</span>
+      </div>`;
+    }).join('') || '<div class="muted" style="font-size:12px">Empty folder</div>';
+
+    document.querySelectorAll('.folder-item').forEach(item => {
+      item.onclick = () => {
+        if (item.dataset.dir === 'true') { openDir(item.dataset.path); return; }
+        if (item.dataset.arc === 'true') { peekAndPick(item.dataset.path, parseInt(item.dataset.size)||0); return; }
+      };
+    });
+  } catch(e) {
+    $('folder-list').innerHTML = `<div class="err-text">${esc(e.message)}</div>`;
+  }
+}
+
+$('btn-up').onclick = () => {
+  if (!state.currentPath) return;
+  const parts = state.currentPath.replace(/\\/g,'/').split('/').filter(Boolean);
+  parts.pop();
+  const parent = (parts.length === 0 ? '/' : (state.currentPath.includes('\\') ? parts.join('\\')+'\\' : '/'+parts.join('/')));
+  openDir(parent);
+};
+
+$('btn-add-folder').onclick = () => {
+  if (!state.currentPath) return;
+  state.pendingSource = { path: state.currentPath, entryType: 'folder' };
+  showTypePicker(null);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 2: Archive peek
+// ═══════════════════════════════════════════════════════════════════════════
+async function peekAndPick(archivePath, sizeBytes) {
+  $('type-card').style.display = 'block';
+  $('type-grid').innerHTML = '';
+  $('phi-type-hint').innerHTML = '<div class="phi-label">AI ASSISTANT</div>Peeking inside archive…';
+  $('btn-confirm-type').disabled = true;
+
+  try {
+    const result = await api('POST', '/api/peek', { path: archivePath });
+    state.pendingSource = { path: archivePath, entryType: 'tarball',
+                            mimeDistribution: result.mimeDistribution,
+                            hasJsonSidecars: result.hasJsonSidecars,
+                            sampledFiles: result.sampledFiles,
+                            sizeBytes };
+
+    // ask decision engine
+    const decision = await askDecide(state.pendingSource);
+    showTypePicker(result, decision);
+  } catch(e) {
+    $('phi-type-hint').innerHTML = `<div class="phi-label">AI ASSISTANT</div><span class="err-text">Could not peek: ${esc(e.message)}</span>`;
+    showTypePicker(null, null);
+  }
+}
+
+async function askDecide(source) {
+  // streams SSE — collect first phi_result or rule event
+  return new Promise(resolve => {
+    const es = new EventSource(API + '/api/decide?' + new URLSearchParams({source: JSON.stringify(source)}));
+    // we'll use POST-based polling instead since SSE from POST isn't standard
+    // use fetch for the POST, parse stream manually
+    es.close();
+    // fallback: direct fetch streaming
+    fetch(API + '/api/decide', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({source}),
+    }).then(async r => {
+      const reader = r.body.getReader();
+      const dec    = new TextDecoder();
+      let buf = '';
+      let result = null;
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, {stream: true});
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          try {
+            const d = JSON.parse(line.slice(5));
+            if (d.type === 'phi_token') {
+              $('phi-type-hint').innerHTML = `<div class="phi-label">AI ASSISTANT</div>${esc(d.text)}`;
+            }
+            if (d.type === 'rule' || d.type === 'phi_result') { result = d; }
+            if (d.type === 'phi_unavailable') { result = d; }
+          } catch {}
+        }
+      }
+      resolve(result);
+    }).catch(() => resolve(null));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 2: Type picker
+// ═══════════════════════════════════════════════════════════════════════════
+const TYPES = [
+  { id:'google_photos',  icon:'📷', name:'Google Photos export',  dest:'→ Immich (dates+albums preserved)' },
+  { id:'old_memories',   icon:'🖼', name:'Old memories / scanned', dest:'→ Immich + ESRGAN eligible' },
+  { id:'google_drive',   icon:'☁️', name:'Google Drive',           dest:'→ NC + Archive' },
+  { id:'onedrive',       icon:'📂', name:'OneDrive / iCloud',      dest:'→ NC + Archive' },
+  { id:'audio',          icon:'🎵', name:'Music / Audio',           dest:'→ Archive/audio' },
+  { id:'code',           icon:'💻', name:'Code / Repos',            dest:'→ Archive/code' },
+  { id:'documents',      icon:'📄', name:'Documents',               dest:'→ NC + Archive' },
+  { id:'media_projects', icon:'🎬', name:'Media projects / footage',dest:'→ Archive only' },
+  { id:'general_backup', icon:'🗂', name:'Mixed / General backup',   dest:'→ Server sorts by type' },
+];
+
+function showTypePicker(peekResult, decision) {
+  let hint = 'What type of content is this?';
+  let suggested = decision?.suggested || decision?.decision || null;
+
+  if (peekResult?.mimeDistribution) {
+    const d   = peekResult.mimeDistribution;
+    const top = Object.entries(d).sort((a,b)=>b[1]-a[1]).slice(0,3)
+                  .map(([k,v])=>`<span class="tag tag-${k}">${Math.round(v*100)}% ${k}</span>`).join(' ');
+    hint = `Sampled ${peekResult.sampledFiles} files: ${top}`;
+    if (peekResult.hasJsonSidecars) hint += ' <span class="tag tag-img">Google Photos sidecars ✓</span>';
+  }
+
+  if (decision?.reason && !decision?.phiAnswer) {
+    hint += `<br><span class="muted" style="font-size:11px">${esc(decision.reason)}</span>`;
+  }
+
+  $('phi-type-hint').innerHTML = `<div class="phi-label">AI ASSISTANT</div>${hint}`;
+
+  $('type-grid').innerHTML = TYPES.map(t => `
+    <div class="type-card${suggested===t.id?' selected':''}" data-type="${t.id}">
+      <div class="type-icon">${t.icon}</div>
+      <div class="type-name">${t.name}</div>
+      <div class="type-dest">${t.dest}</div>
+    </div>`).join('');
+
+  document.querySelectorAll('.type-card').forEach(card => {
+    card.onclick = () => {
+      document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      $('btn-confirm-type').disabled = false;
+    };
+  });
+
+  if (suggested) $('btn-confirm-type').disabled = false;
+  $('type-card').style.display = 'block';
+}
+
+$('btn-confirm-type').onclick = () => {
+  const sel = document.querySelector('.type-card.selected');
+  if (!sel || !state.pendingSource) return;
+  state.pendingSource.userType = sel.dataset.type;
+  state.pendingSource.label    = TYPES.find(t=>t.id===sel.dataset.type)?.name || sel.dataset.type;
+  state.sources.push({ ...state.pendingSource });
+  state.pendingSource = null;
+  $('type-card').style.display = 'none';
+  renderSourcesList();
+  phiSay('sources', `Added. ${state.sources.length} source${state.sources.length>1?'s':''} in your plan. Keep adding or tap "Review plan".`);
+};
+
+$('btn-cancel-type').onclick = () => {
+  state.pendingSource = null;
+  $('type-card').style.display = 'none';
+};
+
+function renderSourcesList() {
+  if (state.sources.length === 0) { $('sources-card').style.display = 'none'; return; }
+  $('sources-card').style.display = 'block';
+  $('sources-list').innerHTML = state.sources.map((s,i) => {
+    const t = TYPES.find(t=>t.id===s.userType);
+    return `<div class="source-row">
+      <span style="font-size:16px">${t?.icon||'📁'}</span>
+      <span class="name">${esc(s.path.split(/[\\/]/).pop())}</span>
+      <span class="size">${fmt(s.sizeBytes)}</span>
+      <span class="muted" style="font-size:11px">${esc(t?.dest||s.userType)}</span>
+      <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="removeSource(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeSource(i) {
+  state.sources.splice(i,1);
+  renderSourcesList();
+}
+
+$('btn-to-review').onclick = () => {
+  if (state.sources.length === 0) return;
+  showScreen(3);
+  renderReview();
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 3: Review
+// ═══════════════════════════════════════════════════════════════════════════
+function renderReview() {
+  const total = state.sources.reduce((s,x)=>s+(x.sizeBytes||0),0);
+  $('review-list').innerHTML = state.sources.map((s,i) => {
+    const t = TYPES.find(t=>t.id===s.userType);
+    const d = s.mimeDistribution || {};
+    const tags = Object.entries(d).slice(0,3)
+      .map(([k,v])=>`<span class="tag tag-${k}">${Math.round(v*100)}% ${k}</span>`).join('');
+    return `<div class="source-row" style="flex-wrap:wrap;gap:6px">
+      <span style="font-size:16px">${t?.icon||'📁'}</span>
+      <span class="name" style="min-width:200px">${esc(s.path)}</span>
+      <span>${tags}</span>
+      <span class="size">${fmt(s.sizeBytes)}</span>
+      <button class="btn btn-danger" style="font-size:10px;padding:2px 7px" onclick="removeSource(${i});renderReview()">Remove</button>
+    </div>`;
+  }).join('');
+
+  const hours = Math.max(1, Math.round(total / 1e9 * 3));   // rough ~3 GB/min
+  $('phi-review-text').textContent =
+    `${state.sources.length} sources, ${fmt(total)} total. `+
+    `Estimated transfer time: ${hours < 60 ? hours+' min' : Math.round(hours/60)+' hr'}. `+
+    `Ready to start?`;
+}
+
+$('btn-back-sources').onclick = () => showScreen(2);
+$('btn-start-transfer').onclick = startTransfer;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 4: Transfer
+// ═══════════════════════════════════════════════════════════════════════════
+async function startTransfer() {
+  if (state.sources.length === 0) return;
+  showScreen(4);
+
+  // render source rows
+  $('transfer-list').innerHTML = state.sources.map((s,i) => {
+    const t = TYPES.find(t=>t.id===s.userType);
+    return `<div class="source-row" id="tr-${i}">
+      <span style="font-size:16px">${t?.icon||'📁'}</span>
+      <span class="name">${esc(s.path.split(/[\\/]/).pop())}</span>
+      <span class="size" id="tr-size-${i}">${fmt(s.sizeBytes)}</span>
+      <span id="tr-status-${i}" class="muted" style="font-size:11px">queued</span>
+      <div class="progress-bar" style="width:100%;margin-top:0;position:absolute;bottom:0;left:0"></div>
+    </div>`;
+  }).join('');
+
+  // upload survey first
+  try {
+    const survey = {
+      user: state.myUser,
+      vvcHost: state.vvcHost,
+      sources: state.sources.map(s => ({
+        path: s.path, entryType: s.entryType, userType: s.userType,
+        mimeDistribution: s.mimeDistribution, hasJsonSidecars: s.hasJsonSidecars,
+        sizeBytes: s.sizeBytes,
+        vvcDest: destFor(s.userType),
+      })),
+    };
+    await api('POST', '/api/upload-survey', { survey, vvcHost: state.vvcHost, vvcSshUser: state.vvcUser });
+    logLine('✅ Survey uploaded to VVC');
+  } catch(e) {
+    logLine('⚠ Survey upload failed — continuing with transfer: ' + e.message);
+  }
+
+  // transfer sources sequentially
+  for (let i = 0; i < state.sources.length; i++) {
+    await transferOne(i);
+  }
+
+  state.transferDone = true;
+  phiSay('transfer', 'All transfers complete. VVC will extract, dedup and import automatically. Moving to final step.');
+  setTimeout(() => { showScreen(5); initDoneScreen(); }, 1500);
+}
+
+async function transferOne(i) {
+  const s     = state.sources[i];
+  const dest  = destFor(s.userType);
+  const el    = $(`tr-status-${i}`);
+  if (el) el.textContent = 'starting…';
+  logLine(`▶ START [${s.path.split(/[\\/]/).pop()}] → ${dest}`);
+
+  try {
+    const { jobId } = await api('POST', '/api/start-rsync', {
+      source: s.path, destPath: dest,
+      vvcHost: state.vvcHost, vvcSshUser: state.vvcUser,
+    });
+    // register job with session
+    await api('POST', '/api/session', {user: state.myUser, action:'heartbeat',
+      job_id: jobId, job_label: s.path.split(/[\\/]/).pop()});
+    state.jobs[jobId] = { source: s, status: 'running', pct: 0 };
+    await streamProgress(jobId, i);
+  } catch(e) {
+    if (el) el.innerHTML = `<span class="err-text">❌ ${esc(e.message)}</span>`;
+    logLine('❌ ' + e.message);
+  }
+}
+
+async function streamProgress(jobId, sourceIdx) {
+  return new Promise(resolve => {
+    const es = new EventSource(`${API}/api/progress/${jobId}`);
+    const el = $(`tr-status-${sourceIdx}`);
+
+    es.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.error) { es.close(); resolve(); return; }
+      const line = d.line || '';
+      if (!line.trim()) return;
+
+      // parse rsync progress percentage
+      const pctMatch = line.match(/(\d+)%/);
+      if (pctMatch && el) {
+        el.textContent = pctMatch[1] + '%';
+      }
+      // only log meaningful lines (not every file)
+      if (line.includes('✅')||line.includes('❌')||line.includes('error')||
+          line.includes('sent')||line.includes('total size')) {
+        logLine(line.trim());
+      }
+
+      if (line.includes('✅ Transfer complete') || line.includes('❌ Transfer failed')) {
+        const ok = line.includes('✅');
+        if (el) el.innerHTML = ok ? '<span class="ok-text">✅ done</span>' : '<span class="err-text">❌ failed</span>';
+        es.close();
+        resolve();
+      }
+    };
+    es.onerror = () => { es.close(); resolve(); };
+  });
+}
+
+function destFor(type) {
+  const me = state.myUser;
+  // All buckets land in vigyan-pool-raw (ingest tier) first.
+  // Post-dedup promotion: raw/ → personal/ → /vigyan/nextcloud/data/{uid}/files/ (NC permanent home).
+  // A2 raw subdatasets: memories-raw, google-drive-raw, onedrive-raw, code-docs-raw,
+  //                     media-projects-raw, courses-raw  (no audio-raw or general-raw).
+  const m = {
+    google_photos:  `/vigyan-archive-raw/${me}/memories-raw/`,
+    old_memories:   `/vigyan-archive-raw/${me}/memories-raw/`,
+    google_drive:   `/vigyan-archive-raw/${me}/google-drive-raw/`,
+    onedrive:       `/vigyan-archive-raw/${me}/onedrive-raw/`,
+    audio:          `/vigyan-archive-raw/${me}/memories-raw/`,      // no audio-raw dataset; bins with memories
+    code:           `/vigyan-archive-personal/code/${me}/`,         // CODE_ARCHIVE_LOCAL — direct, no dedup needed
+    documents:      `/vigyan-archive-raw/${me}/code-docs-raw/`,
+    media_projects: `/vigyan-archive-raw/${me}/media-projects-raw/`,
+    general_backup: `/vigyan-archive-raw/${me}/code-docs-raw/`,    // catch-all — no general-raw dataset in A2
+  };
+  return m[type] || `/vigyan-archive-raw/${me}/code-docs-raw/`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Screen 5: Done — ML polling + tagging
+// ═══════════════════════════════════════════════════════════════════════════
+function initDoneScreen() {
+  const total = state.sources.reduce((s,x)=>s+(x.sizeBytes||0),0);
+  $('done-stats').innerHTML =
+    `📦 ${state.sources.length} sources transferred<br>` +
+    `💾 ${fmt(total)} total<br>` +
+    `⏳ VVC is extracting, deduping and importing to Immich…`;
+
+  pollML();
+}
+
+let _mlTimer = null;
+async function pollML() {
+  try {
+    const status = await api('GET', `/api/immich-status?host=${state.vvcHost}&user=${state.myUser}`);
+    updateMLUI(status);
+    if (!status.mlDone) {
+      _mlTimer = setTimeout(pollML, 15000);
+    } else {
+      showTaggingCard(status);
+    }
+  } catch(e) {
+    // immich not yet ready — retry
+    _mlTimer = setTimeout(pollML, 30000);
+  }
+}
+
+function updateMLUI(status) {
+  const el = $('ml-status');
+  if (status.mlDone) {
+    el.innerHTML = `<span class="ok-text">✅ Face detection complete — ${status.totalPeople||0} clusters found</span>`;
+    $('ml-bar').style.width = '100%';
+  } else {
+    const pct = status.mlPct || 0;
+    el.textContent = `Running… ${pct}% (${status.jobStatus||'processing'})`;
+    $('ml-bar').style.width = pct + '%';
+  }
+}
+
+function showTaggingCard(status) {
+  $('tagging-card').style.display = 'block';
+  $('optional-card').style.display = 'block';
+  const hasDrive = state.sources.some(s => ['google_drive','onedrive'].includes(s.type||s.bucket));
+  if (hasDrive) $('btn-migrate-nc').style.display = '';
+
+  const named   = (status.people||[]).filter(p=>p.name);
+  const unnamed = (status.people||[]).filter(p=>!p.name);
+
+  $('people-grid').innerHTML = [
+    ...named.map(p=>`<div class="person-chip named">✓ ${esc(p.name)}</div>`),
+    ...unnamed.slice(0,8).map((_,i)=>`<div class="person-chip">Unnamed ${i+1}</div>`),
+    unnamed.length > 8 ? `<div class="person-chip">${unnamed.length-8} more…</div>` : '',
+  ].join('');
+
+  const tsUrl  = `http://${state.vvcHost}:2283/people`;
+  const lanUrl = `http://${state.vvcLanIp||state.vvcHost}:2283/people`;
+  $('btn-open-immich-ts').onclick  = () => window.open(tsUrl,  '_blank');
+  $('btn-open-immich-lan').onclick = () => window.open(lanUrl, '_blank');
+
+  phiSay('done',
+    `Face detection found ${status.totalPeople||0} clusters. `+
+    `${named.length} named so far. `+
+    `Open Immich and name each face cluster — takes 30–60 min once and enables smart search forever.`
+  );
+}
+
+$('btn-tagged-done').onclick = async () => {
+  try {
+    const status = await api('GET', `/api/immich-status?host=${state.vvcHost}&user=${state.myUser}`);
+    const named  = (status.people||[]).filter(p=>p.name).length;
+    phiSay('done',
+      named > 0
+        ? `✅ ${named} people named. Smart search, On This Day and face recognition are all active. You're done!`
+        : `Tagging looks incomplete — no named people found yet. Tap Immich and name at least your family members.`
+    );
+  } catch {}
+};
+
+async function triggerOnboardAction(action, btnEl, doneText) {
+  btnEl.disabled = true;
+  try {
+    await api('POST', '/api/onboard/action', {
+      action, user: state.myUser, vvcHost: state.vvcHost, vvcSshUser: state.vvcUser,
+    });
+    btnEl.textContent = doneText;
+  } catch(e) {
+    btnEl.disabled = false;
+    alert('Could not reach VVC: ' + e.message);
+  }
+}
+
+$('btn-dedup-fast').onclick = () =>
+  triggerOnboardAction('dedup-fast',  $('btn-dedup-fast'),  '🚀 GPU dedup queued — approve in Telegram');
+$('btn-dedup-slow').onclick = () =>
+  triggerOnboardAction('dedup-slow',  $('btn-dedup-slow'),  '🐢 CPU dedup queued — approve in Telegram');
+$('btn-enhance').onclick = () =>
+  triggerOnboardAction('enhance',     $('btn-enhance'),     '✨ Enhancement queued — approve in Telegram');
+$('btn-migrate-nc').onclick = () =>
+  triggerOnboardAction('migrate-nc',  $('btn-migrate-nc'),  '📁 Migration queued — approve in Telegram');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Voice input — Web Speech API
+// ═══════════════════════════════════════════════════════════════════════════
+function bucketIcon(b){return{image:'🖼',video:'🎬',audio:'🎵',code:'💻',document:'📄',archive:'📦',sidecar:'📋'}[b]||'📄'}
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening = false;
+
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-IN';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = e => {
+    const transcript = e.results[0][0].transcript.trim().toLowerCase();
+    $('voice-status').textContent = `Heard: "${transcript}"`;
+    handleVoice(transcript);
+  };
+  recognition.onend = () => {
+    isListening = false;
+    $('voice-btn').className = 'voice-btn idle';
+    setTimeout(() => { $('voice-status').textContent = ''; }, 3000);
+  };
+  recognition.onerror = e => {
+    isListening = false;
+    $('voice-btn').className = 'voice-btn idle';
+    $('voice-status').textContent = 'Voice error: ' + e.error;
+  };
+} else {
+  $('voice-btn').style.display = 'none';
+}
+
+$('voice-btn').onclick = () => {
+  if (!recognition) return;
+  if (isListening) { recognition.stop(); return; }
+  isListening = true;
+  $('voice-btn').className = 'voice-btn listening';
+  $('voice-status').textContent = 'Listening…';
+  recognition.start();
+};
+
+function handleVoice(text) {
+  // Map common voice commands to actions
+  if (text.includes('connect') || text.includes('next')) {
+    if (state.screen === 1) $('btn-connect').click();
+    else if (state.screen === 2 && state.sources.length > 0) $('btn-to-review').click();
+    else if (state.screen === 3) $('btn-start-transfer').click();
+    return;
+  }
+  if (text.includes('add this') || text.includes('add folder')) {
+    $('btn-add-folder')?.click(); return;
+  }
+  if (text.includes('go back') || text.includes('back')) {
+    if (state.screen === 3) $('btn-back-sources').click(); return;
+  }
+  if (text.includes('start transfer')) {
+    $('btn-start-transfer')?.click(); return;
+  }
+  if (text.includes('done') || text.includes('finished tagging')) {
+    $('btn-tagged-done')?.click(); return;
+  }
+  if (text.includes('enhance') || text.includes('upscale')) {
+    $('btn-enhance')?.click(); return;
+  }
+  // drive navigation by name
+  document.querySelectorAll('.drive-card').forEach(card => {
+    if (text.includes(card.dataset.label?.toLowerCase())) card.click();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Keyboard shortcut: Enter to advance
+// ═══════════════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName === 'INPUT') return;
+  if (state.screen === 1) $('btn-connect').click();
+});
+</script>
+</body>
+</html>
