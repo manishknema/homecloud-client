@@ -1,6 +1,0 @@
-node_modules/
-dist/
-release/
-test/fixtures/
-*.gguf
-.DS_Store

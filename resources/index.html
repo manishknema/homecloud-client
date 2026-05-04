@@ -547,16 +547,10 @@ input::placeholder{color:var(--text-muted)}
   </div>
 
   <div class="card" id="optional-card" style="display:none">
-    <div class="card-title">Next steps</div>
+    <div class="card-title">Optional enhancements</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary" id="btn-dedup-fast">▶ Fast dedup – GPU</button>
-      <button class="btn btn-ghost"   id="btn-dedup-slow">▶ Slow dedup – CPU</button>
-      <button class="btn btn-ghost"   id="btn-enhance">✨ Enhance old photos</button>
-      <button class="btn btn-ghost"   id="btn-migrate-nc" style="display:none">📁 Migrate Drive→NC</button>
+      <button class="btn btn-ghost" id="btn-enhance">✨ Enhance old photos (ESRGAN)</button>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:8px">
-      Actions are confirmed via Telegram before running on your VVC server.
-    </p>
   </div>
 
   <div class="phi-bubble" id="phi-done">
@@ -1252,22 +1246,18 @@ async function streamProgress(jobId, sourceIdx) {
 
 function destFor(type) {
   const me = state.myUser;
-  // All buckets land in vigyan-pool-raw (ingest tier) first.
-  // Post-dedup promotion: raw/ → personal/ → /vigyan/nextcloud/data/{uid}/files/ (NC permanent home).
-  // A2 raw subdatasets: memories-raw, google-drive-raw, onedrive-raw, code-docs-raw,
-  //                     media-projects-raw, courses-raw  (no audio-raw or general-raw).
   const m = {
-    google_photos:  `/vigyan-archive-raw/${me}/memories-raw/`,
-    old_memories:   `/vigyan-archive-raw/${me}/memories-raw/`,
-    google_drive:   `/vigyan-archive-raw/${me}/google-drive-raw/`,
-    onedrive:       `/vigyan-archive-raw/${me}/onedrive-raw/`,
-    audio:          `/vigyan-archive-raw/${me}/memories-raw/`,      // no audio-raw dataset; bins with memories
-    code:           `/vigyan-archive-personal/code/${me}/`,         // CODE_ARCHIVE_LOCAL — direct, no dedup needed
-    documents:      `/vigyan-archive-raw/${me}/code-docs-raw/`,
-    media_projects: `/vigyan-archive-raw/${me}/media-projects-raw/`,
-    general_backup: `/vigyan-archive-raw/${me}/code-docs-raw/`,    // catch-all — no general-raw dataset in A2
+    google_photos:  `/archive/personal/${me}/memories-raw/`,
+    old_memories:   `/archive/personal/${me}/memories-raw/`,
+    google_drive:   `/archive/personal/${me}/google-drive/`,
+    onedrive:       `/archive/personal/${me}/onedrive/`,
+    audio:          `/archive/personal/${me}/audio/`,
+    code:           `/archive/code/${me}/`,
+    documents:      `/archive/personal/${me}/documents/`,
+    media_projects: `/archive/personal/${me}/media-projects/`,
+    general_backup: `/archive/staging/${me}/`,
   };
-  return m[type] || `/vigyan-archive-raw/${me}/code-docs-raw/`;
+  return m[type] || `/archive/staging/${me}/`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1314,8 +1304,6 @@ function updateMLUI(status) {
 function showTaggingCard(status) {
   $('tagging-card').style.display = 'block';
   $('optional-card').style.display = 'block';
-  const hasDrive = state.sources.some(s => ['google_drive','onedrive'].includes(s.type||s.bucket));
-  if (hasDrive) $('btn-migrate-nc').style.display = '';
 
   const named   = (status.people||[]).filter(p=>p.name);
   const unnamed = (status.people||[]).filter(p=>!p.name);
@@ -1327,7 +1315,7 @@ function showTaggingCard(status) {
   ].join('');
 
   const tsUrl  = `http://${state.vvcHost}:2283/people`;
-  const lanUrl = `http://${state.vvcLanIp||state.vvcHost}:2283/people`;
+  const lanUrl = `http://192.168.0.11:2283/people`;
   $('btn-open-immich-ts').onclick  = () => window.open(tsUrl,  '_blank');
   $('btn-open-immich-lan').onclick = () => window.open(lanUrl, '_blank');
 
@@ -1350,27 +1338,19 @@ $('btn-tagged-done').onclick = async () => {
   } catch {}
 };
 
-async function triggerOnboardAction(action, btnEl, doneText) {
-  btnEl.disabled = true;
+$('btn-enhance').onclick = async () => {
   try {
-    await api('POST', '/api/onboard/action', {
-      action, user: state.myUser, vvcHost: state.vvcHost, vvcSshUser: state.vvcUser,
+    await fetch(`http://${state.vvcHost}:8765/api/notify`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user: state.myUser, message:'ESRGAN enhancement triggered from client app',
+        level:'info', raw:`sudo vigyan-run a19-install-immich --enhance --user ${state.myUser}`}),
     });
-    btnEl.textContent = doneText;
+    $('btn-enhance').textContent = '✨ Enhancement queued — watch Telegram';
+    $('btn-enhance').disabled = true;
   } catch(e) {
-    btnEl.disabled = false;
     alert('Could not reach VVC: ' + e.message);
   }
-}
-
-$('btn-dedup-fast').onclick = () =>
-  triggerOnboardAction('dedup-fast',  $('btn-dedup-fast'),  '🚀 GPU dedup queued — approve in Telegram');
-$('btn-dedup-slow').onclick = () =>
-  triggerOnboardAction('dedup-slow',  $('btn-dedup-slow'),  '🐢 CPU dedup queued — approve in Telegram');
-$('btn-enhance').onclick = () =>
-  triggerOnboardAction('enhance',     $('btn-enhance'),     '✨ Enhancement queued — approve in Telegram');
-$('btn-migrate-nc').onclick = () =>
-  triggerOnboardAction('migrate-nc',  $('btn-migrate-nc'),  '📁 Migration queued — approve in Telegram');
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Voice input — Web Speech API

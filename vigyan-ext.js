@@ -361,16 +361,7 @@ async function uploadSurvey(survey, vvcHost, vvcSshUser) {
   await writeFile(tmp, JSON.stringify(survey, null, 2));
   execSync(`ssh ${vvcSshUser}@${vvcHost} "mkdir -p ${remoteDir}"`, { timeout:10000 });
   execSync(`scp "${tmp}" "${vvcSshUser}@${vvcHost}:${remotePath}"`, { timeout:15000 });
-  try {
-    const srcSummary = JSON.stringify(survey.sources||[]).replace(/"/g, '\\"');
-    const total = (survey.sources||[]).reduce((s,x)=>s+(x.sizeBytes||0),0);
-    execSync(
-      `ssh ${vvcSshUser}@${vvcHost} "curl -sf -X POST http://localhost:8889/api/onboard/survey-ready ` +
-      `-H 'Content-Type: application/json' ` +
-      `-d '{\\"user\\":\\"${survey.user}\\",\\"sources\\":${srcSummary},\\"totalBytes\\":${total}}'"`,
-      {timeout:8000}
-    );
-  } catch {}
+  try { execSync(`ssh ${vvcSshUser}@${vvcHost} "curl -sf -X POST http://localhost:8765/api/onboard/survey-ready -d '{\\"user\\":\\"${survey.user}\\"}'"`, {timeout:8000}); } catch {}
   return remotePath;
 }
 
@@ -592,26 +583,6 @@ Bun.serve({
         send(null);
       });
       return sse(stream);
-    }
-
-    // ── Onboard action (dedup/enhance/migrate) → SSH → bot.py confirm ──────────
-    if (path === '/api/onboard/action' && req.method === 'POST') {
-      const {action, user, vvcHost, vvcSshUser} = await req.json();
-      if (!action || !vvcHost || !vvcSshUser) return err('missing fields');
-      const valid = ['dedup-fast','dedup-slow','enhance','migrate-nc'];
-      if (!valid.includes(action)) return err('unknown action');
-      const payload = JSON.stringify({action, user}).replace(/"/g, '\\"');
-      try {
-        execSync(
-          `ssh ${vvcSshUser}@${vvcHost} ` +
-          `"curl -sf -X POST http://localhost:8889/api/onboard/action ` +
-          `-H 'Content-Type: application/json' -d '${payload}'"`,
-          {timeout: 10000}
-        );
-        return json({ok: true});
-      } catch(e) {
-        return err('VVC unreachable: ' + e.message, 502);
-      }
     }
 
     return err('not found', 404);

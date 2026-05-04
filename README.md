@@ -65,15 +65,15 @@ The app's setup wizard will ask for this path on first launch and test it automa
 > **CPU-only machine?** The app works in rule-based mode without any llama-server.
 > The AI assistant is optional. Rules handle ~80% of cases instantly.
 
-### 3. Phi-4-mini model (~2.4 GB)
+### 3. Phi-4-mini model (~2.1 GB)
 
 The model downloads automatically on first use if not bundled.
 To pre-download manually:
 
 ```bash
 # place next to the app binary (fully offline)
-curl -L -o Phi-4-mini-instruct-Q4_K_M.gguf \
-  "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf"
+curl -L -o Phi-4-mini-instruct-Q4_K_S.gguf \
+  "https://huggingface.co/microsoft/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_S.gguf"
 ```
 
 Or copy it from another machine that already downloaded it — no internet needed after that.
@@ -109,7 +109,7 @@ neu --version   # must be 9.x or later
 
 1. Download the release zip for your platform from the [Releases](../../releases) page
 2. Extract — you get a single folder with everything inside
-3. Copy `Phi-4-mini-instruct-Q4_K_M.gguf` into the folder (or let it download on first launch)
+3. Copy `Phi-4-mini-instruct-Q4_K_S.gguf` into the folder (or let it download on first launch)
 4. Run:
 
 ```bash
@@ -130,7 +130,7 @@ neutralino.exe
 ## Run from source
 
 ```bash
-git clone https://github.com/manishknema/homecloud-client
+git clone https://github.com/vigyanbytes/homecloud-client
 cd homecloud-client
 
 # start the backend
@@ -181,7 +181,7 @@ vigyan-onboard/
   vigyan-ext.exe              Backend server — Windows (self-contained, ~80 MB)
   vigyan-ext                  Backend server — Linux / macOS
   llama-server.exe            AI inference server (platform-specific build)
-  Phi-4-mini-instruct-Q4_K_M.gguf   AI model (~2.4 GB, optional — downloads if missing)
+  Phi-4-mini-instruct-Q4_K_S.gguf   AI model (~2.1 GB, optional — downloads if missing)
   neutralino.config.json      App config
   resources/
     index.html                Full UI (all CSS/JS inline, zero CDN deps, works offline)

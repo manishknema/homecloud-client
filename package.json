@@ -1,15 +1,15 @@
 {
-  "name": "homecloud-client",
+  "name": "vigyan-onboard",
   "version": "1.0.0",
-  "description": "AI-guided personal file migration to Immich + Nextcloud",
+  "description": "VigyanBytes Home Cloud Backup Client",
   "scripts": {
     "start":         "bun run vigyan-ext.js",
-    "make-fixtures": "bun run ./test/make-fixtures.js",
-    "test":          "bun test ./test/test-decision-engine.js ./test/test-ext.js",
-    "test:unit":     "bun test ./test/test-decision-engine.js",
-    "test:api":      "bun test ./test/test-ext.js",
-    "test:voice":    "bun test ./test/test-voice-phi.js",
-    "test:voice:ci": "bun test --grep rule-match ./test/test-voice-phi.js"
+    "make-fixtures": "bun run test/make-fixtures.js",
+    "test":          "bun test test/test-decision-engine.js test/test-ext.js",
+    "test:unit":     "bun test test/test-decision-engine.js",
+    "test:api":      "bun test test/test-ext.js",
+    "test:voice":    "bun test test/test-voice-phi.js",
+    "test:voice:ci": "bun test --grep rule-match test/test-voice-phi.js"
   },
   "type": "module"
 }

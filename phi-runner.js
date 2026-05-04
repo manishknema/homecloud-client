@@ -20,8 +20,8 @@ import { writeFile } from 'fs/promises';
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const PHI_PORT      = 11434;
-const MODEL_FILE    = 'Phi-4-mini-instruct-Q4_K_M.gguf';
-const MODEL_SIZE_GB = 2.5;
+const MODEL_FILE    = 'Phi-4-mini-instruct-Q4_K_S.gguf';
+const MODEL_SIZE_GB = 2.1;
 
 // Model resolution order:
 //   1. Same directory as this script/binary (bundled — preferred)
@@ -30,7 +30,7 @@ const MODEL_SIZE_GB = 2.5;
 const MODEL_PATH_BUNDLED = join(import.meta.dir, MODEL_FILE);
 const MODEL_PATH_CACHE   = join(homedir(), '.vigyan', 'models', MODEL_FILE);
 const MODEL_PATH         = existsSync(MODEL_PATH_BUNDLED) ? MODEL_PATH_BUNDLED : MODEL_PATH_CACHE;
-const MODEL_URL          = 'https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/' + MODEL_FILE;
+const MODEL_URL          = 'https://huggingface.co/microsoft/Phi-4-mini-instruct-GGUF/resolve/main/' + MODEL_FILE;
 
 // llama-server binary — from config, env, or next to this script
 function llamaBinPath() {

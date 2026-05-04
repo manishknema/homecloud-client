@@ -42,8 +42,17 @@ export function ruleDecide(source) {
     needsPhi:   false,
   };
 
+  // ── User already typed a type — trust it if media split is plausible ──────
+  if (userType && media > 20) return {
+    decision:   userType,
+    pipeline:   pipelineFor(userType),
+    confidence: 0.75,
+    reason:     `User tagged as ${userType}, ${Math.round(media)}% media`,
+    needsPhi:   false,
+  };
+
   // ── Pure media without sidecars ───────────────────────────────────────────
-  if (media > HIGH * 100) return {
+  if (media >= HIGH * 100) return {
     decision:   'old_memories',
     pipeline:   ['czkawka', 'exiftool_pass', 'immich_import', 'esrgan_eligible'],
     confidence: 0.85,
@@ -75,15 +84,6 @@ export function ruleDecide(source) {
     pipeline:   ['nc_sync'],
     confidence: 0.85,
     reason:     `${Math.round(doc)}% documents`,
-    needsPhi:   false,
-  };
-
-  // ── User already typed a type — trust it if media split is plausible ──────
-  if (userType && media > 20) return {
-    decision:   userType,
-    pipeline:   pipelineFor(userType),
-    confidence: 0.75,
-    reason:     `User tagged as ${userType}, ${Math.round(media)}% media`,
     needsPhi:   false,
   };
 
