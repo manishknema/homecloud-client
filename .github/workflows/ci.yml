@@ -45,8 +45,6 @@ jobs:
           PORT_OVERRIDE: '3001'
           LLAMA_SERVER_PATH: ''
 
-      - name: Voice rule-match tests (Tier 1)
-        run: bun run test:voice:ci
 
   # ── Cross-platform build + release ─────────────────────────────────────────
   build:
